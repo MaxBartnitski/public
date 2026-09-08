@@ -382,15 +382,44 @@
                         delay: Number.parseFloat(getComputedStyle(el).getPropertyValue('--grow-delay')) || 0,
                     });
                 });
-                syncGrowAdvances();
+                layoutSplashType();
+                seatGrowGlyphs();
+            }
+
+            function scaleTypeToWidth(el, targetWidth) {
+                el.style.fontSize = '';
+                const width = el.scrollWidth;
+                const size = Number.parseFloat(getComputedStyle(el).fontSize);
+                if (!width || !size || !targetWidth) {
+                    throw new Error('Splash type could not be fitted to the screen');
+                }
+                el.style.fontSize = `${(size * targetWidth) / width}px`;
+            }
+
+            function layoutSplashType() {
+                const stage = document.querySelector('.splash-stage');
                 const line = document.getElementById('splash-line');
                 const lockup = document.getElementById('splash-lockup');
-                if (!line || !lockup) {
+                if (!stage || !line || !lockup) {
                     throw new Error('Splash letter stage is missing');
                 }
+                const available = stage.clientWidth;
+                if (!available) {
+                    throw new Error('Splash stage width was empty');
+                }
+                const narrow = window.innerWidth <= 720;
+                syncGrowAdvances();
                 applyAdvanceKerning([...line.children]);
                 applyAdvanceKerning([...lockup.querySelectorAll('.slot')]);
-                seatGrowGlyphs();
+                if (narrow || line.scrollWidth > available) {
+                    scaleTypeToWidth(line, available * (narrow ? 0.96 : 1));
+                }
+                if (narrow || lockup.scrollWidth > available) {
+                    scaleTypeToWidth(lockup, available * (narrow ? 0.84 : 1));
+                }
+                syncGrowAdvances();
+                applyAdvanceKerning([...line.children]);
+                applyAdvanceKerning([...lockup.querySelectorAll('.slot')]);
             }
 
             function letterChar(el) {

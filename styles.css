@@ -349,7 +349,7 @@ html.splash-pending .splash[hidden] {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
+    width: 100%;
     z-index: 100;
     padding: 14px 0;
     background: linear-gradient(145deg, var(--navy-deep), var(--racing));
@@ -920,11 +920,27 @@ html.splash-pending .splash[hidden] {
 @media (max-width: 800px) {
     .hero-inner {
         grid-template-columns: 1fr;
+        justify-items: center;
         gap: 28px;
+        text-align: center;
     }
 
     .hero-visual {
-        max-width: 240px;
+        max-width: min(280px, 72vw);
+        margin: 0 auto;
+    }
+
+    .hero-bio {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .hero-ctas {
+        justify-content: center;
+    }
+
+    .splash-stage {
+        width: calc(100% - 28px);
     }
 
     .contact-row {
@@ -954,8 +970,21 @@ html.splash-pending .splash[hidden] {
     }
 
     .header-container {
-        padding-left: 20px;
-        padding-right: 20px;
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+    }
+
+    .hero-name {
+        font-size: clamp(2rem, 10vw, 3.2rem);
+    }
+
+    .hero-ctas {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .hero-ctas .btn {
+        width: 100%;
     }
 
     .header-logo {
@@ -969,11 +998,13 @@ html.splash-pending .splash[hidden] {
     }
 
     .splash-stage {
-        width: calc(100% - 32px);
+        width: calc(100% - 24px);
+        min-height: 4.5rem;
     }
 
     .splash-skip {
-        bottom: 20px;
+        bottom: max(16px, env(safe-area-inset-bottom));
+        letter-spacing: 0.12em;
     }
 
     .featured-item {
