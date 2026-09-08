@@ -10,6 +10,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        (function () {
+            try {
+                if (window.location.hash) return;
+                var forceSplash = new URLSearchParams(window.location.search).has('splash');
+                if (!forceSplash && sessionStorage.getItem('makoba-splash-seen') === '1') return;
+            } catch (err) {
+                /* storage blocked — still show the splash */
+            }
+            document.documentElement.classList.add('splash-pending');
+        })();
+    </script>
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZZ7KRCKE3D"></script>
@@ -21,9 +33,22 @@
     </script>
 </head>
 <body>
+    <div class="splash" id="splash" role="dialog" aria-modal="true" aria-labelledby="splash-lockup" hidden>
+        <div class="splash-bg" aria-hidden="true"></div>
+        <div class="splash-stage">
+            <p class="splash-line" id="splash-line" aria-hidden="true">
+                <span class="keep">M<span class="baseline-pin"></span></span><span class="keep keep-grow" data-from="a" data-to="A" style="--from-w: 0.5884; --to-w: 0.7695; --grow-delay: 0ms"><span class="grow-strut">a<span class="baseline-pin"></span></span><svg viewBox="0 0 2048 1984" aria-hidden="true"><g transform="translate(0 1984) scale(1 -1)"><path class="morph-path"></path></g></svg></span><span class="drop">x</span><span class="drop">i</span><span class="drop">m</span><span class="space">&nbsp;</span><span class="keep">K<span class="baseline-pin"></span></span><span class="keep keep-grow" data-from="o" data-to="O" style="--from-w: 0.6191; --to-w: 0.7729; --grow-delay: 90ms"><span class="grow-strut">o<span class="baseline-pin"></span></span><svg viewBox="0 0 2048 1984" aria-hidden="true"><g transform="translate(0 1984) scale(1 -1)"><path class="morph-path"></path></g></svg></span><span class="drop">n</span><span class="drop">s</span><span class="drop">t</span><span class="drop">a</span><span class="drop">n</span><span class="drop">t</span><span class="drop">i</span><span class="drop">n</span><span class="space">&nbsp;</span><span class="keep">B<span class="baseline-pin"></span></span><span class="keep keep-grow" data-from="a" data-to="A" style="--from-w: 0.5884; --to-w: 0.7695; --grow-delay: 180ms"><span class="grow-strut">a<span class="baseline-pin"></span></span><svg viewBox="0 0 2048 1984" aria-hidden="true"><g transform="translate(0 1984) scale(1 -1)"><path class="morph-path"></path></g></svg></span><span class="drop">r</span><span class="drop">t</span><span class="drop">n</span><span class="drop">i</span><span class="drop">t</span><span class="drop">s</span><span class="drop">k</span><span class="drop">i</span>
+            </p>
+            <p class="splash-target" id="splash-lockup">
+                <span class="slot">M<span class="baseline-pin"></span></span><span class="slot">A<span class="baseline-pin"></span></span><span class="slot">K<span class="baseline-pin"></span></span><span class="slot">O<span class="baseline-pin"></span></span><span class="slot">B<span class="baseline-pin"></span></span><span class="slot">A<span class="baseline-pin"></span></span>
+            </p>
+        </div>
+        <button type="button" class="splash-skip" id="splash-skip">Click to enter</button>
+    </div>
+
     <header class="header">
         <div class="header-container">
-            <a href="#" class="header-logo" aria-label="Max Bartnitski home">MKB</a>
+            <a href="#" class="header-logo" aria-label="Makoba home">MAKOBA</a>
             <nav class="header-nav">
                 <a href="#work" class="nav-link">Work</a>
                 <a href="#contact" class="nav-link">Contact</a>
@@ -220,6 +245,432 @@
         } else {
             revealEls.forEach((el) => el.classList.add('is-visible'));
         }
+
+        (function initMakobaSplash() {
+            const root = document.documentElement;
+            const splash = document.getElementById('splash');
+            const skipBtn = document.getElementById('splash-skip');
+            const siteChrome = document.querySelectorAll('header, main, footer');
+
+            if (!splash || !skipBtn) {
+                throw new Error('Splash markup is missing (#splash / #splash-skip)');
+            }
+
+            if (!root.classList.contains('splash-pending')) {
+                return;
+            }
+
+            const timers = [];
+            let dismissed = false;
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            function rememberSeen() {
+                try {
+                    sessionStorage.setItem('makoba-splash-seen', '1');
+                } catch (err) {
+                    console.warn('Could not persist splash state', err);
+                }
+            }
+
+            function setChromeInert(inert) {
+                siteChrome.forEach((el) => {
+                    el.inert = inert;
+                });
+            }
+
+            function onKey(event) {
+                if (dismissed) return;
+                if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    dismiss();
+                }
+            }
+
+            function finish() {
+                if (dismissed) return;
+                dismissed = true;
+                timers.forEach((id) => window.clearTimeout(id));
+                window.removeEventListener('keydown', onKey);
+                splash.hidden = true;
+                splash.setAttribute('aria-hidden', 'true');
+                setChromeInert(false);
+                root.classList.remove('splash-pending');
+                root.classList.add('site-enter');
+                rememberSeen();
+            }
+
+            function dismiss() {
+                if (dismissed) return;
+                splash.classList.add('is-exit');
+                window.setTimeout(finish, reduceMotion ? 0 : 720);
+            }
+
+            const INTER_GLYPHS = {
+                a: 'M428 -20Q267 -20 163.5 62.0Q60 144 60 310Q60 434 117.0 507.0Q174 580 268.5 615.0Q363 650 476 660Q618 672 679.5 689.5Q741 707 741 759V763Q741 821 700.5 852.5Q660 884 589 884Q516 884 469.0 853.0Q422 822 408 769L92 810Q125 953 253.5 1042.5Q382 1132 592 1132Q731 1132 843.5 1089.0Q956 1046 1022.5 962.5Q1089 879 1089 759V0H761V157H752Q659 -20 428 -20ZM534 211Q622 211 683.0 263.0Q744 315 744 398V505Q714 489 657.0 478.0Q600 467 551 459Q390 435 390 326Q390 270 430.5 240.5Q471 211 534 211Z',
+                A: 'M47 0 544 1490H1017L1529 0H1133L1032 317H536L439 0ZM619 587H946L926 651Q887 779 850.0 919.0Q813 1059 777 1209Q743 1058 709.5 918.0Q676 778 639 651Z',
+                o: 'M634 -21Q459 -21 333.0 51.5Q207 124 139.5 253.5Q72 383 72 555Q72 727 139.5 857.0Q207 987 333.0 1059.5Q459 1132 634 1132Q809 1132 934.5 1059.5Q1060 987 1127.5 857.0Q1195 727 1195 555Q1195 383 1127.5 253.5Q1060 124 934.5 51.5Q809 -21 634 -21ZM634 246Q734 246 787.0 331.5Q840 417 840 557Q840 697 787.0 781.0Q734 865 634 865Q534 865 481.0 781.0Q428 697 428 557Q428 417 481.0 331.5Q534 246 634 246Z',
+                O: 'M792 -20Q591 -20 430.5 69.0Q270 158 176.0 329.0Q82 500 82 744Q82 990 176.0 1161.0Q270 1332 430.5 1421.0Q591 1510 792 1510Q991 1510 1151.5 1421.0Q1312 1332 1406.0 1161.0Q1500 990 1500 744Q1500 499 1406.0 328.0Q1312 157 1151.5 68.5Q991 -20 792 -20ZM792 290Q954 290 1047.0 406.5Q1140 523 1140 744Q1140 966 1047.0 1083.0Q954 1200 792 1200Q629 1200 536.0 1083.0Q443 966 443 744Q443 523 536.0 406.5Q629 290 792 290Z',
+            };
+
+            function splitSubpaths(d) {
+                const parts = d.match(/M[^M]*/g);
+                if (!parts || !parts.length) {
+                    throw new Error('Glyph path was empty');
+                }
+                return parts;
+            }
+
+            function sampleSubpath(d, count) {
+                const node = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                node.setAttribute('d', d);
+                const len = node.getTotalLength();
+                if (!len) {
+                    throw new Error('Glyph subpath had no length');
+                }
+                return Array.from({ length: count }, (_, i) => {
+                    const point = node.getPointAtLength((len * i) / count);
+                    return [point.x, point.y];
+                });
+            }
+
+            function lerpSubpaths(fromSubs, toSubs, t) {
+                return fromSubs.map((fromPts, index) => {
+                    const toPts = toSubs[index];
+                    const commands = fromPts.map((pt, i) => {
+                        const x = pt[0] + (toPts[i][0] - pt[0]) * t;
+                        const y = pt[1] + (toPts[i][1] - pt[1]) * t;
+                        return `${i ? 'L' : 'M'}${x.toFixed(2)} ${y.toFixed(2)}`;
+                    });
+                    return `${commands.join('')}Z`;
+                }).join('');
+            }
+
+            function easeOutCubic(t) {
+                return 1 - ((1 - t) ** 3);
+            }
+
+            const morphLetters = [];
+
+            function prepareGlyphs() {
+                const grows = [...document.querySelectorAll('.keep-grow')];
+                if (!grows.length) {
+                    throw new Error('Splash grow letters are missing');
+                }
+                grows.forEach((el) => {
+                    const fromName = el.dataset.from;
+                    const toName = el.dataset.to;
+                    const fromD = INTER_GLYPHS[fromName];
+                    const toD = INTER_GLYPHS[toName];
+                    if (!fromD || !toD) {
+                        throw new Error(`Missing Inter outlines for ${fromName} → ${toName}`);
+                    }
+                    const path = el.querySelector('.morph-path');
+                    if (!path) {
+                        throw new Error(`Morph path missing for ${fromName}`);
+                    }
+                    const fromSubs = splitSubpaths(fromD).map((d) => sampleSubpath(d, 96));
+                    const toSubs = splitSubpaths(toD).map((d) => sampleSubpath(d, 96));
+                    if (fromSubs.length !== toSubs.length) {
+                        throw new Error(`Cannot morph ${fromName} → ${toName}: subpath count ${fromSubs.length} vs ${toSubs.length}`);
+                    }
+                    path.setAttribute('d', fromD);
+                    morphLetters.push({
+                        el,
+                        path,
+                        fromSubs,
+                        toSubs,
+                        delay: Number.parseFloat(getComputedStyle(el).getPropertyValue('--grow-delay')) || 0,
+                    });
+                });
+                syncGrowAdvances();
+                const line = document.getElementById('splash-line');
+                const lockup = document.getElementById('splash-lockup');
+                if (!line || !lockup) {
+                    throw new Error('Splash letter stage is missing');
+                }
+                applyAdvanceKerning([...line.children]);
+                applyAdvanceKerning([...lockup.querySelectorAll('.slot')]);
+                seatGrowGlyphs();
+            }
+
+            function letterChar(el) {
+                if (el.classList.contains('space')) {
+                    return '';
+                }
+                if (el.dataset.from) {
+                    return el.dataset.from;
+                }
+                return el.textContent.trim();
+            }
+
+            function applyAdvanceKerning(els) {
+                if (els.length < 2) {
+                    throw new Error('Splash kerning list was empty');
+                }
+                const probe = document.createElement('span');
+                probe.setAttribute('aria-hidden', 'true');
+                probe.style.cssText = 'position:absolute;visibility:hidden;letter-spacing:0;line-height:1;white-space:pre';
+                document.body.appendChild(probe);
+                try {
+                    for (let i = 1; i < els.length; i += 1) {
+                        const left = els[i - 1];
+                        const right = els[i];
+                        const leftChar = letterChar(left);
+                        const rightChar = letterChar(right);
+                        if (!leftChar || !rightChar) {
+                            continue;
+                        }
+                        const leftCs = getComputedStyle(left);
+                        const rightCs = getComputedStyle(right);
+                        if (leftCs.fontWeight !== rightCs.fontWeight || leftCs.fontSize !== rightCs.fontSize) {
+                            continue;
+                        }
+                        probe.style.font = leftCs.font;
+                        probe.style.fontWeight = leftCs.fontWeight;
+                        probe.style.fontSize = leftCs.fontSize;
+                        probe.textContent = leftChar + rightChar;
+                        const pair = probe.getBoundingClientRect().width;
+                        probe.textContent = leftChar;
+                        const a = probe.getBoundingClientRect().width;
+                        probe.textContent = rightChar;
+                        const b = probe.getBoundingClientRect().width;
+                        if (!pair || !a || !b) {
+                            throw new Error(`Could not measure kerning for ${leftChar}${rightChar}`);
+                        }
+                        right.style.marginLeft = `${pair - a - b}px`;
+                    }
+                } finally {
+                    probe.remove();
+                }
+            }
+
+            function letterBaseline(el) {
+                const pin = el.querySelector('.baseline-pin');
+                if (!pin) {
+                    throw new Error('Splash letter is missing a baseline pin');
+                }
+                return pin.getBoundingClientRect().top;
+            }
+
+            function measureCharInk(el, char) {
+                const cs = getComputedStyle(el);
+                const ctx = document.createElement('canvas').getContext('2d');
+                if (!ctx) {
+                    throw new Error('Cannot measure Inter glyph ink');
+                }
+                ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+                const metrics = ctx.measureText(char);
+                const box = el.getBoundingClientRect();
+                if (!box.width || !metrics.width) {
+                    throw new Error(`Inter metrics for ${char} were empty`);
+                }
+                const baseline = letterBaseline(el);
+                const left = box.left - metrics.actualBoundingBoxLeft;
+                const right = box.left + metrics.actualBoundingBoxRight;
+                const top = baseline - metrics.actualBoundingBoxAscent;
+                const bottom = baseline + metrics.actualBoundingBoxDescent;
+                return {
+                    left,
+                    right,
+                    top,
+                    bottom,
+                    baseline,
+                    width: right - left,
+                    height: bottom - top,
+                };
+            }
+
+            function seatGrowGlyphs() {
+                document.querySelectorAll('.keep-grow').forEach((el) => {
+                    const strut = el.querySelector('.grow-strut');
+                    const svg = el.querySelector('svg');
+                    const path = el.querySelector('.morph-path');
+                    if (!strut || !svg || !path) {
+                        throw new Error('Splash grow letter is missing its Inter strut or morph path');
+                    }
+                    svg.style.left = '0px';
+                    svg.style.top = '0px';
+
+                    const baseline = letterBaseline(el);
+                    const svgBox = svg.getBoundingClientRect();
+                    if (!svgBox.height) {
+                        throw new Error(`Cannot seat ${el.dataset.from} onto Inter`);
+                    }
+                    svg.style.top = `${baseline - svgBox.bottom}px`;
+
+                    const textInk = measureCharInk(strut, el.dataset.from);
+                    const pathInk = path.getBoundingClientRect();
+                    if (!pathInk.width || !pathInk.height) {
+                        throw new Error(`Cannot seat ${el.dataset.from} onto Inter`);
+                    }
+                    svg.style.left = `${textInk.left - pathInk.left}px`;
+                });
+            }
+
+            function syncGrowAdvances() {
+                const line = document.getElementById('splash-line');
+                if (!line) {
+                    throw new Error('Splash line is missing');
+                }
+                const font = getComputedStyle(line);
+                const probe = document.createElement('span');
+                probe.setAttribute('aria-hidden', 'true');
+                probe.style.cssText = [
+                    'position:absolute',
+                    'visibility:hidden',
+                    `font:${font.font}`,
+                    `font-size:${font.fontSize}`,
+                    'font-weight:800',
+                    'letter-spacing:0',
+                    'line-height:1',
+                ].join(';');
+                document.body.appendChild(probe);
+                try {
+                    const size = Number.parseFloat(font.fontSize);
+                    if (!size) {
+                        throw new Error('Splash font size was empty');
+                    }
+                    document.querySelectorAll('.keep-grow').forEach((el) => {
+                        probe.textContent = el.dataset.from;
+                        const fromPx = probe.getBoundingClientRect().width;
+                        probe.textContent = el.dataset.to;
+                        const toPx = probe.getBoundingClientRect().width;
+                        if (!fromPx || !toPx) {
+                            throw new Error(`Could not measure ${el.dataset.from} → ${el.dataset.to}`);
+                        }
+                        el.style.setProperty('--from-w', (fromPx / size).toFixed(4));
+                        el.style.setProperty('--to-w', (toPx / size).toFixed(4));
+                    });
+                } finally {
+                    probe.remove();
+                }
+            }
+
+            function growGlyphs() {
+                const duration = 1000;
+                morphLetters.forEach((letter) => {
+                    const start = performance.now() + letter.delay;
+                    function frame(now) {
+                        if (dismissed) return;
+                        const t = Math.min(1, Math.max(0, (now - start) / duration));
+                        const eased = easeOutCubic(t);
+                        letter.path.setAttribute('d', lerpSubpaths(letter.fromSubs, letter.toSubs, eased));
+                        if (t < 1) {
+                            window.requestAnimationFrame(frame);
+                        }
+                    }
+                    window.requestAnimationFrame(frame);
+                });
+            }
+
+            function assembleMakoba() {
+                const line = document.getElementById('splash-line');
+                const target = document.getElementById('splash-lockup');
+                if (!line || !target) {
+                    throw new Error('Splash letter stage is missing');
+                }
+
+                const keeps = [...line.querySelectorAll('.keep')];
+                const slots = [...target.querySelectorAll('.slot')];
+                if (keeps.length !== 6 || slots.length !== 6) {
+                    throw new Error(`Splash expected 6 letters to form MAKOBA, got ${keeps.length} / ${slots.length}`);
+                }
+
+                const lineSize = Number.parseFloat(getComputedStyle(line).fontSize);
+                const targetSize = Number.parseFloat(getComputedStyle(target).fontSize);
+                if (!lineSize || !targetSize) {
+                    throw new Error('Splash font sizes were empty — cannot assemble MAKOBA');
+                }
+                const scale = targetSize / lineSize;
+
+                keeps.forEach((letter, i) => {
+                    const box = letter.getBoundingClientRect();
+                    const toBox = slots[i].getBoundingClientRect();
+                    if (!box.width || !toBox.width) {
+                        throw new Error('Splash letter metrics were empty — cannot assemble MAKOBA');
+                    }
+                    const fromBase = letterBaseline(letter);
+                    const toBase = letterBaseline(slots[i]);
+                    letter.style.transformOrigin = `0px ${fromBase - box.top}px`;
+                    const dx = toBox.left - box.left;
+                    const dy = toBase - fromBase;
+                    letter.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+                    letter.classList.add('is-flying');
+                });
+            }
+
+            function startPlayback() {
+                prepareGlyphs();
+
+                if (reduceMotion) {
+                    morphLetters.forEach((letter) => {
+                        letter.path.setAttribute('d', lerpSubpaths(letter.fromSubs, letter.toSubs, 1));
+                    });
+                    splash.classList.add('is-line', 'is-assembled', 'is-static');
+                    timers.push(window.setTimeout(dismiss, 2400));
+                    return;
+                }
+
+                const beats = [
+                    [280, 'is-line'],
+                    [2400, 'is-highlight'],
+                    [4200, 'is-fade'],
+                    [5600, assembleMakoba],
+                    [7200, () => {
+                        splash.classList.add('is-grow');
+                        growGlyphs();
+                    }],
+                    [9800, dismiss],
+                ];
+                beats.forEach(([ms, phase]) => {
+                    timers.push(window.setTimeout(() => {
+                        if (typeof phase === 'function') {
+                            phase();
+                            return;
+                        }
+                        splash.classList.add(phase);
+                    }, ms));
+                });
+            }
+
+            function play() {
+                splash.hidden = false;
+                setChromeInert(true);
+                skipBtn.focus({ preventScroll: true });
+
+                const start = () => {
+                    try {
+                        startPlayback();
+                    } catch (err) {
+                        console.error('Splash failed', err);
+                        finish();
+                    }
+                };
+
+                if (document.fonts && document.fonts.ready) {
+                    document.fonts.ready.then(start).catch((err) => {
+                        console.error('Splash font wait failed', err);
+                        start();
+                    });
+                    return;
+                }
+                start();
+            }
+
+            splash.addEventListener('click', dismiss);
+            skipBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                dismiss();
+            });
+            window.addEventListener('keydown', onKey);
+
+            try {
+                play();
+            } catch (err) {
+                console.error('Splash failed', err);
+                finish();
+            }
+        })();
     </script>
 </body>
 </html>
